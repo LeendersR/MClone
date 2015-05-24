@@ -1,3 +1,5 @@
 # MClone
 
-Some game.
+Currently looks like this:
+
+![](screenshot.png)
