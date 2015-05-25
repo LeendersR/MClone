@@ -2,6 +2,7 @@ import pyglet
 import math
 from world import World
 from player import Player
+from utils import discretize
 from pyglet.gl import *
 from pyglet.window import key, mouse
 from pyglet.graphics import vertex_list
@@ -117,6 +118,29 @@ class Game(pyglet.window.Window):
                 self.player.velocity[1] = 0
             self.player.position = new_pos
 
+    def hit_test(self, position, direction, max_distance=5):
+        x, y, z = position
+        x_dir, y_dir, z_dir = direction
+        num_steps = 10
+        x_step = x_dir/num_steps
+        y_step = y_dir/num_steps
+        z_step = z_dir/num_steps
+        prev_pos = None
+        for step in xrange(num_steps*max_distance):
+            block_pos = discretize((x, y, z))
+            if prev_pos != block_pos and self.world.occupied(block_pos):
+                return prev_pos, block_pos
+            prev_pos = block_pos
+            x, y, z = x+x_step, y+y_step, z+z_step
+        return None, None
+
+    def position_intersects_object(self, position, obj):
+        x, y, z = discretize(obj.position)
+        for dy in xrange(obj.height):
+            if position == (x, y-dy, z):
+                return True
+        return False
+
     def on_key_press(self, pressed_key, modifiers):
         self.player.on_key_press(pressed_key, modifiers)
         if pressed_key == key.ESCAPE:
@@ -129,9 +153,25 @@ class Game(pyglet.window.Window):
         if self.exclusive:
             self.player.on_mouse_motion(x, y, dx, dy)
 
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        self.on_mouse_motion(x, y, dx, dy)
+
     def on_mouse_press(self, x, y, button, modifiers):
         if not self.exclusive:
             self.set_exclusive_mouse(True)
+        else:
+            direction = self.player.camera_direction()
+            prev_block_pos, block_pos = self.hit_test(self.player.position,
+                                                      direction)
+            if not block_pos:
+                return
+            if button == mouse.LEFT:
+                self.world.remove_block(block_pos)
+            elif button == mouse.RIGHT:
+                if not self.position_intersects_object(prev_block_pos,
+                                                       self.player):
+                    self.world.add_block(prev_block_pos,
+                                         self.player.active_block)
 
 
 if __name__ == '__main__':

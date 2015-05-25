@@ -5,6 +5,7 @@ from pyglet.graphics import TextureGroup
 from pyglet import image
 from collections import deque
 from blocks import *
+from utils import discretize
 
 
 class World(object):
@@ -142,7 +143,7 @@ class World(object):
         position = list(obj.position)
         height = obj.height
         max_overlap = 0.1
-        disc_pos = self.discretize(position)
+        disc_pos = discretize(position)
         for axis in xrange(3):
             for direction in [-1, 1]:
                 overlap = (position[axis] - disc_pos[axis]) * direction
@@ -156,6 +157,9 @@ class World(object):
                         position[axis] -= (overlap - max_overlap) * direction
                         break
         return tuple(position)
+
+    def occupied(self, position):
+        return discretize(position) in self.blocks
 
     def generate_world(self, seed=None):
         if seed is None:
@@ -172,10 +176,5 @@ class World(object):
         self.add_block((6, 2, 3), SandBlock(), urgent=False)
 
     def chunk_position(self, position):
-        x, y, z = self.discretize(position)
+        x, y, z = discretize(position)
         return x/self.CHUNK_SIZE, y/self.CHUNK_SIZE, z/self.CHUNK_SIZE
-
-    def discretize(self, position):
-        x, y, z = position
-        x, y, z = int(round(x)), int(round(y)), int(round(z))
-        return x, y, z

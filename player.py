@@ -1,6 +1,7 @@
 import math
 from pyglet.window import key, mouse
 from utils import clamp
+from blocks import GrassBlock
 
 
 class Player(object):
@@ -10,6 +11,15 @@ class Player(object):
         self.rotation = (0, 0)
         self.rotation_speed = 0.25
         self.position = position
+        self.active_block = GrassBlock()
+
+    def camera_direction(self):
+        x_rot, y_rot = self.rotation
+        m = math.cos(math.radians(y_rot))
+        x = math.cos(math.radians(x_rot-90)) * m
+        y = math.sin(math.radians(y_rot))
+        z = math.sin(math.radians(x_rot-90)) * m
+        return x, y, z
 
     def update_position(self, dt):
         x_vel, y_vel, z_vel = self.velocity
