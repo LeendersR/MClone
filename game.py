@@ -87,7 +87,11 @@ class Game(pyglet.window.Window):
             self.apply_gravity(self.player, dt)
             new_pos = self.world.collides(self.player)
             # new_pos contains the nearest position without collisions
+            # If we collided on the y-axis stop gravity
+            if new_pos[1] != self.player.position[1]:
+                self.player.velocity[1] = 0
             self.player.position = new_pos
+
 
     def on_key_press(self, pressed_key, modifiers):
         self.player.on_key_press(pressed_key, modifiers)

@@ -154,9 +154,6 @@ class World(object):
                     new_pos[1] -= dy
                     if tuple(new_pos) in self.blocks:
                         position[axis] -= (overlap - max_overlap) * direction
-                        # Stop gravity?
-                        if axis == 1:
-                            obj.velocity[1] = 0
                         break
         return tuple(position)
 
