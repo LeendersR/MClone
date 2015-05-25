@@ -21,8 +21,9 @@ class Game(pyglet.window.Window):
         self.GRAVITY = 0.5
         self.exclusive = False
         self.world = World()
-        self.player = Player()
+        self.player = Player((0, 50, 0))
         self.world.load_chunks(self.player.position)
+        self.player.velocity[1] = -1
         self.setup_opengl()
         self.setup_crosshair()
         self.clear()
@@ -99,6 +100,10 @@ class Game(pyglet.window.Window):
         dy = dt*y_vel
         obj.velocity = [x_vel, y_vel, z_vel]
         x, y, z = obj.position
+        # Just temporary so you cannot fall into oblivion
+        if y+dy <= 0:
+            dy = 0
+            obj.velocity[1] = 0
         obj.position = (x, y+dy, z)
 
     def update(self, dt):

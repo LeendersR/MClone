@@ -6,6 +6,7 @@ from pyglet import image
 from collections import deque
 from blocks import *
 from utils import discretize
+from noise import gen_map
 
 
 class World(object):
@@ -19,7 +20,6 @@ class World(object):
         self.chunks = {}
         self.current_chunk = (float('inf'), float('inf'), float('inf'))
         self.drawing_queue = deque()
-        self.generate_world()
 
     def neighbors(self, position):
         for axis in xrange(3):
@@ -56,6 +56,8 @@ class World(object):
             self.redraw_neighbors(position)
 
     def draw_chunk(self, chunk):
+        if chunk not in self.chunks:
+            self.generate_chunk(chunk)
         for position in self.chunks.get(chunk, []):
             if position not in self.drawn_blocks and self.exposed(position):
                 self.draw_block(position, False)
@@ -70,7 +72,9 @@ class World(object):
         new_chunks_visible = set()
         num_adjacent = 2
         for dx in xrange(-num_adjacent, num_adjacent + 1):
-            for dy in xrange(-num_adjacent, num_adjacent + 1):
+            # for dy in xrange(-num_adjacent, num_adjacent + 1):
+            # Infinte height for the moment to help with terrain generation
+            for dy in [0]:
                 for dz in xrange(-num_adjacent, num_adjacent + 1):
                     x, y, z = self.current_chunk
                     old_chunks_visible.add((x + dx, y + dy, z + dz))
@@ -161,20 +165,18 @@ class World(object):
     def occupied(self, position):
         return discretize(position) in self.blocks
 
-    def generate_world(self, seed=None):
+    def generate_chunk(self, chunk, seed=None):
         if seed is None:
             seed = time.clock()
         random.seed(seed)
-        size = 20
-        for x in xrange(-size, size):
-            for z in xrange(-size, size):
-                self.add_block((x, -2, z), GrassBlock(), urgent=False)
-
-        self.add_block((3, -1, 3), StoneBlock(), urgent=False)
-        self.add_block((4, 0, 3), BrickBlock(), urgent=False)
-        self.add_block((5, 1, 3), GrassBlock(), urgent=False)
-        self.add_block((6, 2, 3), SandBlock(), urgent=False)
+        dx, dy, dz = chunk
+        dx *= self.CHUNK_SIZE
+        dy *= self.CHUNK_SIZE
+        dz *= self.CHUNK_SIZE
+        blocks = gen_map((dx, dy, dz), self.CHUNK_SIZE, 0, 10)
+        for position in blocks:
+            self.add_block(position, GrassBlock(), False)
 
     def chunk_position(self, position):
         x, y, z = discretize(position)
-        return x/self.CHUNK_SIZE, y/self.CHUNK_SIZE, z/self.CHUNK_SIZE
+        return x/self.CHUNK_SIZE, 0, z/self.CHUNK_SIZE
