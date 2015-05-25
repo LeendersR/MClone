@@ -34,10 +34,10 @@ class World(object):
                     return True
         return False
 
-    def add_block(self, position, texture, urgent=True):
+    def add_block(self, position, block_type, urgent=True):
         if position in self.blocks:
             self.remove_block(position)
-        self.blocks[position] = texture
+        self.blocks[position] = block_type
         self.chunks.setdefault(self.chunk_position(position),
                                []).append(position)
         if urgent:
