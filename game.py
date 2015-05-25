@@ -4,6 +4,7 @@ from world import World
 from player import Player
 from pyglet.gl import *
 from pyglet.window import key, mouse
+from pyglet.graphics import vertex_list
 
 
 class Game(pyglet.window.Window):
@@ -22,12 +23,14 @@ class Game(pyglet.window.Window):
         self.player = Player()
         self.world.load_chunks(self.player.position)
         self.setup_opengl()
+        self.setup_crosshair()
         self.clear()
         self.set_exclusive_mouse(True)
         pyglet.clock.schedule_interval(self.update, 1.0/self.FRAMES_PER_SEC)
 
     def setup_opengl(self):
         glEnable(GL_CULL_FACE)
+        glEnable(GL_DEPTH_TEST)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glEnable(GL_FOG)
@@ -37,16 +40,24 @@ class Game(pyglet.window.Window):
         glFogf(GL_FOG_START, self.FOG_START)
         glFogf(GL_FOG_END, self.FOG_END)
 
+    def setup_crosshair(self):
+        width, height = self.get_size()
+        size = 10
+        x = width/2
+        y = height/2
+        self.crosshair = vertex_list(4, ('v2i', (x - size, y, x + size, y, x,
+                                                 y - size, x, y + size)))
+
     def clear(self):
         super(Game, self).clear()
         glClearColor(*self.SKY_COLOR)
+        glColor3d(1, 1, 1)
 
     def set_exclusive_mouse(self, exclusive):
         super(Game, self).set_exclusive_mouse(exclusive)
         self.exclusive = exclusive
 
     def setup_3d(self):
-        glEnable(GL_DEPTH_TEST)
         width, height = self.get_size()
         glViewport(0, 0, width, height)
         glMatrixMode(GL_PROJECTION)
@@ -61,10 +72,24 @@ class Game(pyglet.window.Window):
         x, y, z = self.player.position
         glTranslatef(-x, -y, -z)
 
+    def setup_2d(self):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        width, height = self.get_size()
+        gluOrtho2D(0, width, 0, height)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+    def draw_crosshair(self):
+        glColor3d(0.25, 0.25, 0.25)
+        self.crosshair.draw(GL_LINES)
+
     def on_draw(self):
         self.clear()
         self.setup_3d()
         self.world.draw()
+        self.setup_2d()
+        self.draw_crosshair()
 
     def apply_gravity(self, obj, dt):
         x_vel, y_vel, z_vel = obj.velocity
@@ -91,7 +116,6 @@ class Game(pyglet.window.Window):
             if new_pos[1] != self.player.position[1]:
                 self.player.velocity[1] = 0
             self.player.position = new_pos
-
 
     def on_key_press(self, pressed_key, modifiers):
         self.player.on_key_press(pressed_key, modifiers)
