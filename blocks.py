@@ -3,12 +3,14 @@ class Block(object):
     top_texture = (0, 0)
     bottom_texture = (0, 0)
     side_texture = (0, 0)
+    texture_data = []
 
     def __init__(self):
-        top = self.texture_coords(*self.top_texture)
-        bottom = self.texture_coords(*self.bottom_texture)
-        side = self.texture_coords(*self.side_texture)
-        self.texture_data = top + bottom + side*4
+        if not self.texture_data:
+            top = self.texture_coords(*self.top_texture)
+            bottom = self.texture_coords(*self.bottom_texture)
+            side = self.texture_coords(*self.side_texture)
+            self.texture_data.extend(top + bottom + side*4)
 
     @staticmethod
     def texture_coords(x, y, size=0.25):
@@ -45,6 +47,7 @@ class GrassBlock(Block):
     top_texture = (1, 0)
     bottom_texture = (0, 1)
     side_texture = (0, 0)
+    texture_data = []
 
 
 class SandBlock(Block):
@@ -52,6 +55,7 @@ class SandBlock(Block):
     top_texture = (1, 1)
     bottom_texture = (1, 1)
     side_texture = (1, 1)
+    texture_data = []
 
 
 class StoneBlock(Block):
@@ -59,6 +63,7 @@ class StoneBlock(Block):
     top_texture = (2, 1)
     bottom_texture = (2, 1)
     side_texture = (2, 1)
+    texture_data = []
 
 
 class BrickBlock(Block):
@@ -66,3 +71,4 @@ class BrickBlock(Block):
     top_texture = (2, 0)
     bottom_texture = (2, 0)
     side_texture = (2, 0)
+    texture_data = []
