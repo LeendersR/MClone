@@ -3,7 +3,7 @@ import random
 
 
 def noise(x, y, z):
-    """ Ported from http://mrl.nyu.edu/~perlin/noise/ (yes it is a mess)
+    """ Ported from http://mrl.nyu.edu/~perlin/noise/
     """
     X = int(x % 255)
     Y = int(y % 255)
@@ -22,7 +22,6 @@ def noise(x, y, z):
     BA = p[B]+Z
     BB = p[B+1]+Z
 
-    # Again yes it is a mess but pep8 compliant?
     return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z),
                                 grad(p[BA], x-1, y, z)),
                         lerp(u, grad(p[AB], x, y-1, z),
@@ -68,7 +67,7 @@ p = 2*[151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225,
        29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180]
 
 
-def fbm(x, y, z, octaves=8, lacunarity=2.0, gain=0.5):
+def fbm(x, y, z, octaves=4, lacunarity=0.1, gain=0.5):
     amplitude = 1.0
     frequency = 1.0
     accum = 0.0
@@ -77,19 +76,3 @@ def fbm(x, y, z, octaves=8, lacunarity=2.0, gain=0.5):
         amplitude *= gain
         frequency *= lacunarity
     return accum
-
-
-def gen_map(offset, chunk_size, base_level, map_height):
-    blocks = set()
-    smoothness = float(random.randint(15, 30))
-    dx, dy, dz = offset
-    for x in xrange(dx, dx+chunk_size):
-        for z in xrange(dz, dz+chunk_size):
-            for y in xrange(map_height):
-                density = fbm(x/smoothness, y/smoothness, z/smoothness)
-                if y > base_level:
-                    if density*10 > 0:
-                        blocks.add((x, y, z))
-                else:
-                    blocks.add((x, y, z))
-    return blocks

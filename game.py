@@ -1,5 +1,6 @@
 import pyglet
 import math
+import time
 from world import World
 from player import Player
 from utils import discretize
@@ -101,14 +102,17 @@ class Game(pyglet.window.Window):
         obj.velocity = [x_vel, y_vel, z_vel]
         x, y, z = obj.position
         # Just temporary so you cannot fall into oblivion
-        if y+dy <= 0:
-            dy = 0
+        if y+dy <= 1:
+            dy = 1
             obj.velocity[1] = 0
         obj.position = (x, y+dy, z)
 
     def update(self, dt):
-        self.world.update(1.0/self.FRAMES_PER_SEC)
+        start = time.clock()
         self.world.load_chunks(self.player.position)
+        time_taken = time.clock()-start
+        approx_time_left = max(0, 1.0/self.FRAMES_PER_SEC - time_taken)
+        self.world.update(approx_time_left)
         # We move a tiny amount each time, otherwise it would be possible
         # to fall through the blocks, because the system notices it too late
         num_steps = 10
@@ -168,7 +172,7 @@ class Game(pyglet.window.Window):
             direction = self.player.camera_direction()
             prev_block_pos, block_pos = self.hit_test(self.player.position,
                                                       direction)
-            if not block_pos:
+            if not block_pos or not prev_block_pos:
                 return
             if button == mouse.LEFT:
                 self.world.remove_block(block_pos)

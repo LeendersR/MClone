@@ -6,7 +6,7 @@ from pyglet import image
 from collections import deque
 from blocks import *
 from utils import discretize
-from noise import gen_map
+from noise import *
 
 
 class World(object):
@@ -18,8 +18,11 @@ class World(object):
         self.drawn_blocks = {}
         self.vertex_lists = {}
         self.chunks = {}
+        self.chunks_generated = set()
         self.current_chunk = (float('inf'), float('inf'), float('inf'))
         self.drawing_queue = deque()
+        self.generation_queue = deque()
+        self.queues = [self.drawing_queue, self.generation_queue]
 
     def neighbors(self, position):
         for axis in xrange(3):
@@ -56,8 +59,7 @@ class World(object):
             self.redraw_neighbors(position)
 
     def draw_chunk(self, chunk):
-        if chunk not in self.chunks:
-            self.generate_chunk(chunk)
+        self.generate_chunk(chunk)
         for position in self.chunks.get(chunk, []):
             if position not in self.drawn_blocks and self.exposed(position):
                 self.draw_block(position, False)
@@ -68,24 +70,34 @@ class World(object):
                 self.undraw_block(position, False)
 
     def change_chunk(self, new_chunk):
-        old_chunks_visible = set()
+        curr_chunks_visible = set()
         new_chunks_visible = set()
-        num_adjacent = 2
-        for dx in xrange(-num_adjacent, num_adjacent + 1):
-            # for dy in xrange(-num_adjacent, num_adjacent + 1):
+        num_adjacent_drawn = 3
+        for dx in xrange(-num_adjacent_drawn, num_adjacent_drawn + 1):
+            # for dy in xrange(-num_adjacent_drawn, num_adjacent_drawn + 1):
             # Infinte height for the moment to help with terrain generation
             for dy in [0]:
-                for dz in xrange(-num_adjacent, num_adjacent + 1):
+                for dz in xrange(-num_adjacent_drawn, num_adjacent_drawn + 1):
                     x, y, z = self.current_chunk
-                    old_chunks_visible.add((x + dx, y + dy, z + dz))
+                    curr_chunks_visible.add((x + dx, y + dy, z + dz))
                     x, y, z = new_chunk
                     new_chunks_visible.add((x + dx, y + dy, z + dz))
-        draw = new_chunks_visible - old_chunks_visible
-        undraw = old_chunks_visible - new_chunks_visible
-        for chunk in draw:
-            self.draw_chunk(chunk)
+        draw = new_chunks_visible - curr_chunks_visible
+        undraw = curr_chunks_visible - new_chunks_visible
         for chunk in undraw:
             self.undraw_chunk(chunk)
+        for chunk in draw:
+            self.draw_chunk(chunk)
+        # There can occur an condition that the terrain is being generated
+        # (in the queue) but that we need it now, to draw. We could then do
+        # terrain generation on the spot and remove it from the queue. It felt
+        # messy and it slowed things down easier is to increase this number of
+        # adjacent tiles for which we generate terrain.
+        num_adjacent_gen = num_adjacent_drawn+3
+        for dx in xrange(-num_adjacent_gen, num_adjacent_gen+1):
+                for dz in xrange(-num_adjacent_gen, num_adjacent_gen+1):
+                    x, y, z = new_chunk
+                    self.generate_chunk((x + dx, y, z + dz), False)
         self.current_chunk = new_chunk
 
     def load_chunks(self, position):
@@ -109,7 +121,7 @@ class World(object):
         if urgent:
             self._draw_block(position)
         else:
-            self.drawing_queue.append((self._draw_block, position))
+            self.drawing_queue.append((self._draw_block, (position,)))
 
     def _draw_block(self, position):
         """ Draw block at `position`"""
@@ -128,7 +140,7 @@ class World(object):
         if urgent:
             self._undraw_block(position)
         else:
-            self.drawing_queue.append((self._undraw_block, position))
+            self.drawing_queue.append((self._undraw_block, (position,)))
 
     def _undraw_block(self, position):
         if position in self.vertex_lists:
@@ -139,9 +151,15 @@ class World(object):
 
     def update(self, dt):
         start = time.clock()
-        while self.drawing_queue and time.clock()-start < dt:
-            func, position = self.drawing_queue.popleft()
-            func(position)
+        while time.clock()-start < dt:
+            all_empty = True
+            for queue in self.queues:
+                if queue:
+                    func, args = queue.popleft()
+                    func(*args)
+                    all_empty = False
+            if all_empty:
+                return
 
     def collides(self, obj):
         position = list(obj.position)
@@ -165,17 +183,34 @@ class World(object):
     def occupied(self, position):
         return discretize(position) in self.blocks
 
-    def generate_chunk(self, chunk, seed=None):
-        if seed is None:
-            seed = time.clock()
-        random.seed(seed)
+    def generate_chunk(self, chunk, urgent=True):
+        if chunk in self.chunks_generated:
+            return
+        self.chunks_generated.add(chunk)
         dx, dy, dz = chunk
         dx *= self.CHUNK_SIZE
         dy *= self.CHUNK_SIZE
         dz *= self.CHUNK_SIZE
-        blocks = gen_map((dx, dy, dz), self.CHUNK_SIZE, 0, 10)
-        for position in blocks:
-            self.add_block(position, GrassBlock(), False)
+        smoothness = float(random.randint(20, 30))
+        map_height = 10
+        base_level = 0
+        for x in xrange(dx, dx+self.CHUNK_SIZE):
+            for z in xrange(dz, dz+self.CHUNK_SIZE):
+                for y in xrange(map_height):
+                    if urgent:
+                        self._generate_chunk(x, y, z, smoothness, base_level)
+                    else:
+                        self.generation_queue.append((self._generate_chunk,
+                                                     (x, y, z, smoothness,
+                                                      base_level)))
+
+    def _generate_chunk(self, x, y, z, smoothness, base_level):
+        density = fbm(x/smoothness, y/smoothness, z/smoothness, 4, 2.0, 0.5)
+        if y > base_level:
+            if density*10 > 0:
+                self.add_block((x, y, z), GrassBlock(), False)
+        else:
+            self.add_block((x, y, z), GrassBlock(), False)
 
     def chunk_position(self, position):
         x, y, z = discretize(position)
