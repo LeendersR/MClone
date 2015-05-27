@@ -24,6 +24,7 @@ class Game(pyglet.window.Window):
         self.world = World()
         self.player = Player((0, 50, 0))
         self.world.load_chunks(self.player.position)
+        self.world.update(float('inf'))
         self.player.velocity[1] = -1
         self.setup_opengl()
         self.setup_crosshair()
