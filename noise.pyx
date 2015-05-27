@@ -2,25 +2,25 @@ import math
 import random
 
 
-def noise(x, y, z):
+cdef double noise(double x, double y, double z):
     """ Ported from http://mrl.nyu.edu/~perlin/noise/
     """
-    X = int(x % 255)
-    Y = int(y % 255)
-    Z = int(z % 255)
-    x = x - int(x)
-    y = y - int(y)
-    z = z - int(z)
-    u = fade(x)
-    v = fade(y)
-    w = fade(z)
+    cdef int X = int(x % 255)
+    cdef int Y = int(y % 255)
+    cdef int Z = int(z % 255)
+    x -= int(x)
+    y -= int(y)
+    z -= int(z)
+    cdef double u = fade(x)
+    cdef double v = fade(y)
+    cdef double w = fade(z)
 
-    A = p[X]+Y
-    AA = p[A]+Z
-    AB = p[A+1]+Z
-    B = p[X+1]+Y
-    BA = p[B]+Z
-    BB = p[B+1]+Z
+    cdef int A = p[X]+Y
+    cdef int AA = p[A]+Z
+    cdef int AB = p[A+1]+Z
+    cdef int B = p[X+1]+Y
+    cdef int BA = p[B]+Z
+    cdef int BB = p[B+1]+Z
 
     return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z),
                                 grad(p[BA], x-1, y, z)),
@@ -32,19 +32,19 @@ def noise(x, y, z):
                      grad(p[BB+1], x-1, y-1, z-1))))
 
 
-def fade(t):
+cdef double fade(double t):
     return t * t * t * (t * (t * 6 - 15) + 10)
 
 
-def lerp(t, a, b):
+def lerp(double t, double a, double b):
     return a + t * (b - a)
 
 
-def grad(hash, x, y, z):
-    h = hash % 16
-    u = x if h < 8 else y
-    v = y if h < 4 else (x if h == 12 or h == 14 else z)
-    r = u if h % 2 == 0 else -u
+cdef double grad(int hash, double x, double y, double z):
+    cdef int h = hash % 16
+    cdef double u = x if h < 8 else y
+    cdef double v = y if h < 4 else (x if h == 12 or h == 14 else z)
+    cdef double r = u if h % 2 == 0 else -u
     r += v if h % 4 == 0 else -v
     return r
 
@@ -67,10 +67,10 @@ p = 2*[151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225,
        29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180]
 
 
-def fbm(x, y, z, octaves=8, lacunarity=1.0, gain=0.5):
-    amplitude = 1.0
-    frequency = 1.0
-    accum = 0.0
+cpdef double fbm(double x, double y, double z, int octaves=8, double lacunarity=1.0, double gain=0.5):
+    cdef double amplitude = 1.0
+    cdef double frequency = 1.0
+    cdef double accum = 0.0
     for i in range(octaves):
         accum += amplitude * noise(x * frequency, y * frequency, z * frequency)
         amplitude *= gain
