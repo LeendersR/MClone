@@ -72,7 +72,7 @@ class World(object):
     def change_chunk(self, new_chunk):
         curr_chunks_visible = set()
         new_chunks_visible = set()
-        num_adjacent_drawn = 3
+        num_adjacent_drawn = 4
         for dx in xrange(-num_adjacent_drawn, num_adjacent_drawn + 1):
             # for dy in xrange(-num_adjacent_drawn, num_adjacent_drawn + 1):
             # Infinte height for the moment to help with terrain generation
@@ -84,6 +84,9 @@ class World(object):
                     new_chunks_visible.add((x + dx, y + dy, z + dz))
         draw = new_chunks_visible - curr_chunks_visible
         undraw = curr_chunks_visible - new_chunks_visible
+        # Draw from inside out
+        draw = sorted(list(draw), key=lambda pos: (pos[0]**2 + pos[1]**2 +
+                                                   pos[2]**2))
         for chunk in undraw:
             self.undraw_chunk(chunk)
         for chunk in draw:
@@ -91,7 +94,7 @@ class World(object):
         # There can occur an condition that the terrain is being generated
         # (in the queue) but that we need it now, to draw. We could then do
         # terrain generation on the spot and remove it from the queue. It felt
-        # messy and it slowed things down easier is to increase this number of
+        # messy and it slowed things down, easier is to increase this number of
         # adjacent tiles for which we generate terrain.
         num_adjacent_gen = num_adjacent_drawn+3
         for dx in xrange(-num_adjacent_gen, num_adjacent_gen+1):
@@ -193,24 +196,19 @@ class World(object):
         dz *= self.CHUNK_SIZE
         smoothness = float(random.randint(20, 30))
         max_height = 10
-        base_level = 0
+        base_level = 5
         for x in xrange(dx, dx+self.CHUNK_SIZE):
             for z in xrange(dz, dz+self.CHUNK_SIZE):
-                height = int(max_height*clamp(0, fbm(x/smoothness, z/smoothness, 0), 1))
-                for y in xrange(height):
-                    if urgent:
-                        self._generate_chunk(x, y, z, smoothness, base_level)
-                    else:
-                        self.generation_queue.append((self._generate_chunk,
-                                                     (x, y, z, smoothness,
-                                                      base_level)))
+                params = (x, z, smoothness, max_height)
+                if urgent:
+                    self._generate_chunk(*params)
+                else:
+                    self.generation_queue.append((self._generate_chunk,
+                                                  params))
 
-    def _generate_chunk(self, x, y, z, smoothness, base_level):
-        density = fbm(x/smoothness, y/smoothness, z/smoothness, 8, 1.0, 0.5)
-        if y > base_level:
-            if density*10 > 0:
-                self.add_block((x, y, z), GrassBlock(), False)
-        else:
+    def _generate_chunk(self, x, z, smoothness, max_height):
+        height = max_height*clamp(0, fbm(x/smoothness, z/smoothness, 0), 1)
+        for y in xrange(int(height)+1):
             self.add_block((x, y, z), GrassBlock(), False)
 
     def chunk_position(self, position):
