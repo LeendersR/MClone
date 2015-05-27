@@ -127,7 +127,7 @@ class Game(pyglet.window.Window):
                 self.player.velocity[1] = 0
             self.player.position = new_pos
 
-    def hit_test(self, position, direction, max_distance=5):
+    def hit_test(self, position, direction, max_distance=8):
         x, y, z = position
         x_dir, y_dir, z_dir = direction
         num_steps = 10
