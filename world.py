@@ -100,7 +100,8 @@ class World(object):
         for dx in xrange(-num_adjacent_gen, num_adjacent_gen+1):
                 for dz in xrange(-num_adjacent_gen, num_adjacent_gen+1):
                     x, y, z = new_chunk
-                    self.generate_chunk((x + dx, y, z + dz), False)
+                    params = ((x + dx, y, z + dz), False)
+                    self.generation_queue.append((self.generate_chunk, params))
         self.current_chunk = new_chunk
 
     def load_chunks(self, position):
