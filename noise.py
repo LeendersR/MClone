@@ -67,7 +67,7 @@ p = 2*[151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225,
        29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180]
 
 
-def fbm(x, y, z, octaves=4, lacunarity=0.1, gain=0.5):
+def fbm(x, y, z, octaves=8, lacunarity=1.0, gain=0.5):
     amplitude = 1.0
     frequency = 1.0
     accum = 0.0

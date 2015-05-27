@@ -5,7 +5,7 @@ from pyglet.graphics import TextureGroup
 from pyglet import image
 from collections import deque
 from blocks import *
-from utils import discretize
+from utils import *
 from noise import *
 
 
@@ -192,11 +192,12 @@ class World(object):
         dy *= self.CHUNK_SIZE
         dz *= self.CHUNK_SIZE
         smoothness = float(random.randint(20, 30))
-        map_height = 10
+        max_height = 10
         base_level = 0
         for x in xrange(dx, dx+self.CHUNK_SIZE):
             for z in xrange(dz, dz+self.CHUNK_SIZE):
-                for y in xrange(map_height):
+                height = int(max_height*clamp(0, fbm(x/smoothness, z/smoothness, 0), 1))
+                for y in xrange(height):
                     if urgent:
                         self._generate_chunk(x, y, z, smoothness, base_level)
                     else:
@@ -205,7 +206,7 @@ class World(object):
                                                       base_level)))
 
     def _generate_chunk(self, x, y, z, smoothness, base_level):
-        density = fbm(x/smoothness, y/smoothness, z/smoothness, 4, 2.0, 0.5)
+        density = fbm(x/smoothness, y/smoothness, z/smoothness, 8, 1.0, 0.5)
         if y > base_level:
             if density*10 > 0:
                 self.add_block((x, y, z), GrassBlock(), False)
