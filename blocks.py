@@ -1,4 +1,16 @@
 class Block(object):
+    """Represents a block in the world
+
+    Attributes:
+        name: The name of the block.
+        top_texture: The (row, column) indices of the texture shown on the top.
+        bottom_texture: The (row, column) indices of the texture shown on the
+            bottom.
+        side_texture: The (row, column) indices of the texture shown on each
+            side of the cube.
+        texture_data: The texture data that is send to the vertex buffer, this
+            attribute is generated based on the above three attributes.
+    """
     name = "UNKNOWN"
     top_texture = (0, 0)
     bottom_texture = (0, 0)
@@ -13,9 +25,20 @@ class Block(object):
             self.texture_data.extend(top + bottom + side*4)
 
     @staticmethod
-    def texture_coords(x, y, size=0.25):
-        x *= size
-        y *= size
+    def texture_coords(row, column, size=0.25):
+        """Returns texture coordinates for a given row, column and size.
+
+        Args:
+            row: The row in the texture.
+            column: The column in the texture.
+            size: The size of the texture.
+
+        Returns:
+            A list of coordinates containing the bottom left, bottom right,
+            top right and top left coordinates.
+        """
+        x = row * size
+        y = column * size
         bottom_left = [x, y]
         bottom_right = [x+size, y]
         top_right = [x+size, y+size]
@@ -24,6 +47,18 @@ class Block(object):
 
     @staticmethod
     def cube_vertices(x, y, z, size=0.5):
+        """Returns coordinates for a cube
+
+        Args:
+            x: x position of the cube
+            y: y position of the cube
+            z: z position of the cube
+            size: size of the cube
+
+        Returns:
+            A tuple of coordinates that represents all corner points of the
+            cube.
+        """
         # Order: top, bottom, left, right, front, back
         # t=top, b=bottom, l=left, r=right, b=back, f=front
         tlb = [x-size, y+size, z-size]

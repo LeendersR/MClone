@@ -3,7 +3,7 @@ import random
 
 
 cdef double noise(double x, double y, double z):
-    """ Ported from http://mrl.nyu.edu/~perlin/noise/
+    """Ported from http://mrl.nyu.edu/~perlin/noise/
     """
     cdef int X = int(x % 255)
     cdef int Y = int(y % 255)
@@ -67,7 +67,8 @@ p = 2*[151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225,
        29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180]
 
 
-cpdef double fbm(double x, double y, double z, int octaves=8, double lacunarity=1.0, double gain=0.5):
+cpdef double fbm(double x, double y, double z, int octaves=8,
+                 double lacunarity=1.0, double gain=0.5):
     cdef double amplitude = 1.0
     cdef double frequency = 1.0
     cdef double accum = 0.0
